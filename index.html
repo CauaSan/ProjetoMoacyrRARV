@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>WebXR + Three.js + TypeScript</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { height: 100%; overflow: hidden; background: #101015; }
+      #app { position: fixed; inset: 0; }
+      #info {
+        position: fixed;
+        top: 12px;
+        left: 0;
+        width: 100%;
+        text-align: center;
+        color: #fff;
+        font-family: system-ui, sans-serif;
+        font-size: 14px;
+        pointer-events: none;
+        text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <div id="info">Clique em <b>ENTER VR</b> ou <b>START AR</b>. No desktop, arraste para orbitar.</div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

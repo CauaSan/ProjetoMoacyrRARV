@@ -1,0 +1,26 @@
+# Dependências (NUNCA sobem pro Git)
+node_modules/
+
+# Build de produção
+dist/
+dist-ssr/
+
+# Logs e arquivos temporários do sistema/editores
+*.local
+*.log
+.DS_Store
+Thumbs.db
+
+# Configurações de ambiente / chaves locais
+.env
+.env.local
+.env.*.local
+
+# IDEs / Editores de código
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# Cache do Vite / TypeScript
+.vite/
+*.tsbuildinfo
