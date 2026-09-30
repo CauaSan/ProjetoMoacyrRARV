@@ -11,12 +11,11 @@ export const M = {
 } as const;
 export const M2 = 1;
 
-// ───────────────────────── constantes de montagem (metros) ─────────────────────────
-const FOLGA = 0.002;      // folga entre peças coladas na fila (doc 6.4)
-const FOLGA_MIN = 0.0005; // menor folga aceita ao deslizar/encaixar
-const Z_TRILHO = M.painel.p / 2 + M.trilho.p / 2; // trilho encostado na chapa do painel
-const Y_TRILHO = -0.10;   // fila de baixo (peças apanháveis), no espaço do painel
-const Y_FILA2 = 0.075;    // fila de cima (só cenografia)
+const FOLGA = 0.002;
+const FOLGA_MIN = 0.0005;
+const Z_TRILHO = M.painel.p / 2 + M.trilho.p / 2;
+const Y_TRILHO = -0.10;
+const Y_FILA2 = 0.075;
 const LED_POS = new THREE.Vector3(0.215, Y_FILA2, 0.045);
 
 const COR_OURO = 0xd9a520;
@@ -38,20 +37,16 @@ function matDe(cor: number): THREE.MeshStandardMaterial {
   return m;
 }
 
-// ───────────────────────── medidas lidas da própria geometria ─────────────────────────
 function parametros(o: THREE.Object3D): { width: number; height: number; depth: number } | null {
   return o instanceof THREE.Mesh && o.geometry instanceof THREE.BoxGeometry ? o.geometry.parameters : null;
 }
 const meiaLargura = (o: THREE.Object3D): number => (parametros(o)?.width ?? M.disjuntor.l) / 2;
 const meiaAltura = (o: THREE.Object3D): number => (parametros(o)?.height ?? M.disjuntor.a) / 2;
 
-/** z (no espaço do trilho) em que a peça encosta no trilho: face de trás da peça na face da frente do trilho. */
 export function zDeEncaixe(peca: THREE.Object3D): number {
   return M.trilho.p / 2 + (parametros(peca)?.depth ?? M.disjuntor.p) / 2;
 }
 
-// ───────────────────────── detalhes das peças apanháveis (só primitivas, sem textura) ─────────────────────────
-/** Adiciona um detalhe como filho da peça. Detalhes não participam do raycast: quem responde é o corpo da peça. */
 function parte(
   pai: THREE.Object3D, geo: THREE.BufferGeometry, cor: number,
   dim: [number, number, number], pos: [number, number, number], rotX = 0,
@@ -69,32 +64,30 @@ function terminais(peca: THREE.Object3D, larg: number, metade: number, prof: num
   const zc = -0.004;
   const lados: [number, number][] = [[1, fios[0]], [-1, fios[1]]];
   for (const [s, corFio] of lados) {
-    parte(peca, CAIXA, COR_OURO, [larg, 0.008, prof], [0, s * (metade + 0.004), zc]);                                   // bloco do terminal
-    parte(peca, CILINDRO, 0x15171b, [0.007, 0.002, 0.007], [0, s * (metade + 0.004), zc + prof / 2 + 0.001], Math.PI / 2); // parafuso
-    parte(peca, CILINDRO, corFio, [0.0032, 0.035, 0.0032], [0, s * (metade + 0.008 + 0.0175), zc]);                      // fio
+    parte(peca, CAIXA, COR_OURO, [larg, 0.008, prof], [0, s * (metade + 0.004), zc]);
+    parte(peca, CILINDRO, 0x15171b, [0.007, 0.002, 0.007], [0, s * (metade + 0.004), zc + prof / 2 + 0.001], Math.PI / 2);
+    parte(peca, CILINDRO, corFio, [0.0032, 0.035, 0.0032], [0, s * (metade + 0.008 + 0.0175), zc]);
   }
 }
 
 function detalharPeca(peca: THREE.Mesh, tipo: 'disjuntor' | 'borne' | 'barramento', fios: [number, number] = [FIO_AZUL, FIO_AZUL]): void {
   if (tipo === 'disjuntor') {
     const { a, p } = M.disjuntor; const zf = p / 2;
-    parte(peca, CAIXA, 0x0e0f12, [0.011, 0.024, 0.003], [0, 0.008, zf + 0.0005]);   // janela da alavanca
-    parte(peca, CAIXA, 0x4b5059, [0.006, 0.011, 0.006], [0, 0.014, zf + 0.003]);    // alavanca (posição ligado)
-    parte(peca, CAIXA, 0xf4f4f2, [0.013, 0.014, 0.001], [0, -0.02, zf + 0.0005]);   // rótulo branco
+    parte(peca, CAIXA, 0x0e0f12, [0.011, 0.024, 0.003], [0, 0.008, zf + 0.0005]);
+    parte(peca, CAIXA, 0x4b5059, [0.006, 0.011, 0.006], [0, 0.014, zf + 0.003]);
+    parte(peca, CAIXA, 0xf4f4f2, [0.013, 0.014, 0.001], [0, -0.02, zf + 0.0005]);
     terminais(peca, 0.014, a / 2, 0.02, fios);
   } else if (tipo === 'borne') {
     const { l, a, p } = M.borne;
-    parte(peca, CAIXA, 0x1f2937, [l + 0.0004, 0.012, p + 0.0004], [0, a / 2 - 0.006, 0]);               // tampa escura
-    for (const y of [0.012, -0.012]) parte(peca, CILINDRO, 0x15171b, [0.008, 0.002, 0.008], [0, y, p / 2 + 0.001], Math.PI / 2); // parafusos
-    parte(peca, CILINDRO, fios[0], [0.0032, 0.06, 0.0032], [0, a / 2 + 0.03, 0]);                        // fio de cima (vai até a canaleta)
-    parte(peca, CILINDRO, fios[1], [0.0032, 0.04, 0.0032], [0, -(a / 2 + 0.02), 0]);                     // fio de baixo
+    parte(peca, CAIXA, 0x1f2937, [l + 0.0004, 0.012, p + 0.0004], [0, a / 2 - 0.006, 0]);
+    for (const y of [0.012, -0.012]) parte(peca, CILINDRO, 0x15171b, [0.008, 0.002, 0.008], [0, y, p / 2 + 0.001], Math.PI / 2);
+    parte(peca, CILINDRO, fios[0], [0.0032, 0.06, 0.0032], [0, a / 2 + 0.03, 0]);
+    parte(peca, CILINDRO, fios[1], [0.0032, 0.04, 0.0032], [0, -(a / 2 + 0.02), 0]);
   } else {
-    for (let i = 0; i < 4; i++) parte(peca, CAIXA, 0xd97706, [0.006, 0.02, 0.006], [-0.0315 + i * 0.021, -0.016, 0]); // dentes do pente
+    for (let i = 0; i < 4; i++) parte(peca, CAIXA, 0xd97706, [0.006, 0.02, 0.006], [-0.0315 + i * 0.021, -0.016, 0]);
   }
 }
 
-// ───────────────────────── cenografia estática (fila de cima, canaletas, medidores) ─────────────────────────
-/** Agrupa muitas caixas/cilindros iguais num único InstancedMesh: dezenas de peças, uma chamada de desenho. */
 class Lote {
   private readonly matrizes: THREE.Matrix4[] = [];
   private readonly cores: THREE.Color[] = [];
@@ -130,7 +123,6 @@ function aleatorio(semente: number): () => number {
   };
 }
 
-/** Deixa o painel com o aspecto da foto de referência. Tudo aqui é fixo na placa e NÃO é apanhável. */
 function montarCenografia(painel: THREE.Group): void {
   const cenografia = new THREE.Group(); cenografia.name = 'cenografia'; painel.add(cenografia);
   const corpo = new Lote(CAIXA, mat(0xffffff, 0x000000, 0.05, 0.5));
@@ -141,8 +133,8 @@ function montarCenografia(painel: THREE.Group): void {
   const rnd = aleatorio(9);
 
   const d = M.disjuntor;
-  const zc = Z_TRILHO + M.trilho.p / 2 + d.p / 2; // centro da peça encostada no trilho
-  const zf = zc + d.p / 2;                        // frente da peça
+  const zc = Z_TRILHO + M.trilho.p / 2 + d.p / 2;
+  const zf = zc + d.p / 2;
 
   const terminal = (x: number, y: number, s: 1 | -1, corFio: number, larg = 0.014): void => {
     const yb = y + s * (d.a / 2 + 0.004);
@@ -161,7 +153,7 @@ function montarCenografia(painel: THREE.Group): void {
     terminal(x, y, 1, FIO_AZUL); terminal(x, y, -1, fioDeBaixo());
   };
 
-  const medidor = (x: number, y: number): void => { // medidor de 2 módulos, com visor vermelho
+  const medidor = (x: number, y: number): void =>
     corpo.add(x, y, zc, 0.036, d.a, d.p, 0xe9ecef);
     escuro.add(x, y + 0.012, zf + 0.0005, 0.028, 0.026, 0.003, 0x0e0f12);
     for (let k = 0; k < 3; k++) display.add(x - 0.008 + k * 0.008, y + 0.012, zf + 0.0022, 0.005, 0.010, 0.001, 0xff3b2f);
@@ -171,7 +163,6 @@ function montarCenografia(painel: THREE.Group): void {
     terminal(x - 0.0085, y, -1, FIO_VERM); terminal(x + 0.0085, y, -1, FIO_PRETO);
   };
 
-  // fila de cima: trilho + disjuntores e medidores colados (folga de 2 mm)
   const trilho2 = new THREE.Mesh(new THREE.BoxGeometry(M.trilho.l, M.trilho.a, M.trilho.p), MAT_ACO);
   trilho2.position.set(0, Y_FILA2, Z_TRILHO); cenografia.add(trilho2);
   const padrao = 'bbbmbbbbbmbbbbbmbb';
@@ -179,13 +170,12 @@ function montarCenografia(painel: THREE.Group): void {
   for (let i = 0; ; i++) {
     const medidorAqui = padrao[i % padrao.length] === 'm';
     const w = medidorAqui ? 0.036 : d.l;
-    if (x + w > 0.185) break; // o resto da fila é do LED
+    if (x + w > 0.185) break;
     (medidorAqui ? medidor : disjuntor)(x + w / 2, Y_FILA2);
     x += w + FOLGA;
   }
-  cil.add(LED_POS.x, LED_POS.y, Z_TRILHO + 0.005, 0.030, 0.020, 0.030, 0x1b1d22, Math.PI / 2); // aro do LED
+  cil.add(LED_POS.x, LED_POS.y, Z_TRILHO + 0.005, 0.030, 0.020, 0.030, 0x1b1d22, Math.PI / 2);
 
-  // canaletas ranhuradas (onde os fios entram)
   const canaleta = (y: number, h: number): void => {
     corpo.add(0, y, 0.055, 0.54, h, 0.06, 0xdfe3e7);
     const n = 88; const passo = 0.54 / n;
@@ -228,7 +218,6 @@ export class XRScene {
     this.bancada.position.set(0, M.bancada.a / 2, -0.50);
     this.raiz.add(this.bancada);
 
-    // painel: chapa + moldura do quadro (paredes laterais, topo e base)
     this.painel = new THREE.Group(); this.painel.name = 'painel'; this.painel.position.set(0, 1.10, -0.60); this.raiz.add(this.painel);
     const painelMesh = new THREE.Mesh(new THREE.BoxGeometry(M.painel.l, M.painel.a, M.painel.p), mat(0xaab1b9, 0x000000, 0.25, 0.6));
     this.painel.add(painelMesh);
@@ -239,17 +228,15 @@ export class XRScene {
     parede(0.02, M.painel.a, 0.135, -0.29, 0); parede(0.02, M.painel.a, 0.135, 0.29, 0);
     parede(0.56, 0.02, 0.135, 0, 0.19); parede(0.56, 0.02, 0.135, 0, -0.19);
 
-    // trilho da fila de baixo (a das peças apanháveis)
     this.trilho = new THREE.Group(); this.trilho.name = 'trilho'; this.trilho.position.set(0, Y_TRILHO, Z_TRILHO); this.painel.add(this.trilho);
     const rail = new THREE.Mesh(new THREE.BoxGeometry(M.trilho.l, M.trilho.a, M.trilho.p), MAT_ACO); this.trilho.add(rail);
-    for (const y of [0.0155, -0.0155]) { // abas do perfil
+    for (const y of [0.0155, -0.0155]) {
       const aba = new THREE.Mesh(CAIXA, matDe(0xd3d8de)); aba.scale.set(M.trilho.l, 0.004, 0.0015); aba.position.set(0, y, M.trilho.p / 2 + 0.0005); this.trilho.add(aba);
     }
-    for (let i = 0; i < 12; i++) { // 12 furos de fixação (rasgos escuros)
+    for (let i = 0; i < 12; i++) {
       const furo = new THREE.Mesh(CAIXA, matDe(0x1a1c20)); furo.scale.set(0.02, 0.007, 0.0012); furo.position.set(-0.22 + i * 0.04, 0, M.trilho.p / 2 + 0.0003); this.trilho.add(furo);
     }
 
-    // fila de peças coladas (folga de 2 mm): 2 bornes e 4 disjuntores, com trecho livre à direita
     let cursor = -0.185;
     const xBornes: number[] = []; const xDisj: number[] = [];
     for (let i = 0; i < 2; i++) { xBornes.push(cursor + M.borne.l / 2); cursor += M.borne.l + FOLGA; }
@@ -257,7 +244,6 @@ export class XRScene {
     for (let i = 0; i < 4; i++) this.criarDisjuntor(i, i === 3, xDisj[i]);
     for (let i = 0; i < 2; i++) this.criarBorne(i, xBornes[i]);
 
-    // bandeja: chapa verde com borda, e o barramento
     this.bandeja = new THREE.Group(); this.bandeja.name = 'bandeja'; this.bandeja.position.set(0.34, 0.93, -0.34); this.raiz.add(this.bandeja);
     this.bandeja.add(new THREE.Mesh(new THREE.BoxGeometry(0.40, 0.02, 0.20), mat(0x15803d)));
     const borda = mat(0x166534);
@@ -268,7 +254,6 @@ export class XRScene {
     detalharPeca(barramento, 'barramento');
     this.bandeja.add(barramento); this.apanhaveis.push(barramento); this.soltas.add(barramento);
 
-    // LED fixo na placa (o aro escuro vem da cenografia)
     const ledMat = mat(0x404040);
     this.led = new THREE.Mesh(new THREE.SphereGeometry(0.008, 20, 12), ledMat); this.led.name = 'led'; this.led.position.copy(LED_POS); this.painel.add(this.led);
 
@@ -301,12 +286,10 @@ export class XRScene {
     const apoio = new THREE.DirectionalLight(0xbfd4ff, 0.55); apoio.position.set(-1.5, 1.2, 1.0); this.scene.add(apoio);
   }
 
-  /** Peças encaixadas no trilho (disjuntores e bornes). */
   private pecasDoTrilho(): THREE.Mesh[] {
     return [...this.disjuntores, ...this.bornes].filter((o) => o.parent === this.trilho);
   }
 
-  /** Limites de x (espaço do trilho) para a peça deslizar: pontas do trilho e vizinhas (meia largura + 0,5 mm). */
   limitesDeslize(peca: THREE.Object3D): { min: number; max: number } {
     const meia = meiaLargura(peca);
     let min = -M.trilho.l / 2 + meia; let max = M.trilho.l / 2 - meia;
@@ -319,7 +302,6 @@ export class XRScene {
     return { min, max };
   }
 
-  /** Altura (no espaço da raiz) da superfície que segura uma peça solta em (x, z). */
   private alturaDeApoio(x: number, z: number): number {
     const b = this.bandeja.position;
     if (Math.abs(x - b.x) <= 0.20 && Math.abs(z - b.z) <= 0.10) return b.y + 0.01;
@@ -332,14 +314,14 @@ export class XRScene {
     if (this.balanco) this.painel.rotation.y = Math.sin(this.tempo / 1.5) * 0.1;
     if (this.deslize && this.disjuntorMovel.parent === this.trilho) {
       const { min, max } = this.limitesDeslize(this.disjuntorMovel);
-      if (max > min) { // 0,06 m/s, invertendo o sentido ao encostar numa vizinha ou na ponta
+      if (max > min) {
         let x = this.disjuntorMovel.position.x + this.sentido * 0.06 * delta;
         if (x >= max) { x = max; this.sentido = -1; } else if (x <= min) { x = min; this.sentido = 1; }
         this.disjuntorMovel.position.x = x;
       }
     }
     for (const obj of this.soltas) {
-      if (obj.parent !== this.raiz) continue; // no trilho, na bandeja ou na mão: sem gravidade
+      if (obj.parent !== this.raiz) continue;
       const v = (obj.userData.vy ?? 0) - 9.8 * delta; obj.userData.vy = v;
       obj.position.y += v * delta;
       const chao = this.alturaDeApoio(obj.position.x, obj.position.z) + meiaAltura(obj);
